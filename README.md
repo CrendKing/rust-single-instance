@@ -28,6 +28,11 @@ In both platforms, since the mechanism is tied to kernel objects (file mapping h
 * Windows: The name can contain any character except the backslash character (\\), with no maximum length.
 * Linux: Any name satisfying the underlying file system's requirement.
 
+### Minimum Supported Rust Version
+
+- Library usage: **1.74.0**
+- Running tests/contributing: **1.75.0**
+
 ### Example
 
 ```rust

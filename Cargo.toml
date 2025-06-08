@@ -1,7 +1,8 @@
 [package]
 name = 'singleton-process'
-version = '0.1.0'
-edition = '2024'
+version = '0.1.1'
+edition = '2018'
+rust-version = '1.74.0'
 description = 'Ensure only a single process actively running with an associated name.'
 readme = 'README.md'
 repository = 'https://github.com/CrendKing/rust-singleton-process'

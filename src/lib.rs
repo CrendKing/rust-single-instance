@@ -19,11 +19,12 @@ type Result<T> = std::result::Result<T, SingletonProcessError>;
 #[cfg(target_os = "windows")]
 mod inner {
     use std::env::current_exe;
+    use std::mem::size_of_val;
 
-    use windows::Win32::Foundation::{ERROR_ALREADY_EXISTS, GetLastError, HANDLE, INVALID_HANDLE_VALUE};
-    use windows::Win32::System::Memory::{CreateFileMappingA, FILE_MAP_READ, FILE_MAP_WRITE, MapViewOfFile, PAGE_READWRITE, UnmapViewOfFile};
-    use windows::Win32::System::Threading::{OpenProcess, PROCESS_TERMINATE, TerminateProcess};
     use windows::core::PCSTR;
+    use windows::Win32::Foundation::{GetLastError, ERROR_ALREADY_EXISTS, HANDLE, INVALID_HANDLE_VALUE};
+    use windows::Win32::System::Memory::{CreateFileMappingA, MapViewOfFile, UnmapViewOfFile, FILE_MAP_READ, FILE_MAP_WRITE, PAGE_READWRITE};
+    use windows::Win32::System::Threading::{OpenProcess, TerminateProcess, PROCESS_TERMINATE};
 
     use crate::SingletonProcessError;
 
@@ -76,13 +77,15 @@ mod inner {
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
 mod inner {
+    use std::convert::TryInto;
     use std::env::{current_exe, temp_dir};
     use std::fs::{File, OpenOptions};
     use std::io::{Read, Seek, Write};
+    use std::mem::size_of_val;
 
     use nix::errno::Errno;
     use nix::fcntl::{Flock, FlockArg};
-    use nix::sys::signal::{Signal, kill};
+    use nix::sys::signal::{kill, Signal};
     use nix::unistd::Pid;
 
     pub struct SingletonProcess {
@@ -105,9 +108,7 @@ mod inner {
                     (lock, true)
                 }
                 Err((f, Errno::EAGAIN)) => (Flock::lock(f, FlockArg::LockSharedNonblock).map_err(|(_, e)| e)?, false),
-                Err((_, e)) => {
-                    panic!("flock failed with errno: {e}");
-                }
+                Err((_, e)) => panic!("flock failed with errno: {}", e),
             };
 
             if !is_first {
@@ -180,11 +181,11 @@ mod tests {
     #[function_name::named]
     fn test_keep_old_process() -> Result<()> {
         let mut system = sysinfo::System::new();
-        let parent_exe_pre_si = get_parent_process_exe(&mut system);
+        let parent_exe_pre = get_parent_process_exe(&mut system);
         std::mem::forget(SingletonProcess::try_new(None, false)?);
         let current_exe = std::env::current_exe()?;
 
-        if let Some(p) = parent_exe_pre_si {
+        if let Some(p) = parent_exe_pre {
             assert_ne!(p, current_exe);
         }
 
@@ -199,12 +200,12 @@ mod tests {
     #[function_name::named]
     fn test_keep_new_process() -> Result<()> {
         let mut system = sysinfo::System::new();
-        let parent_exe_pre_si = get_parent_process_exe(&mut system);
+        let parent_exe_pre = get_parent_process_exe(&mut system);
         std::mem::forget(SingletonProcess::try_new(None, true)?);
         let current_exe = std::env::current_exe()?;
 
         if_chain! {
-            if let Some(p) = parent_exe_pre_si;
+            if let Some(p) = parent_exe_pre;
             if p == current_exe;
             then {
                 assert!(get_parent_process_exe(&mut system).is_none());
