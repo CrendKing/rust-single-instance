@@ -4,6 +4,11 @@
 
 Ensure only a single process actively running with an associated name. The user can choose whether to keep the existing or subsequent process.
 
+```toml
+[dependencies]
+singleton-process = '0.1'
+```
+
 ### Details
 
 The singleton effect is in sync with the lifetime of the `SingletonProcess` object. If the effect is needed throughout the whole process, the object can be "forgotten" with [`std::mem::forget`](https://doc.rust-lang.org/std/mem/fn.forget.html).
@@ -26,7 +31,9 @@ In both platforms, since the mechanism is tied to kernel objects (file mapping h
 ### Example
 
 ```rust
+use singleton_process::SingletonProcess;
+
 fn main() {
-    std::mem::forget(singleton_process::SingletonProcess::try_new(None, true).unwrap());
+    std::mem::forget(SingletonProcess::try_new(None, true).unwrap());
 }
 ```

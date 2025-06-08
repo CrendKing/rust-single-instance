@@ -6,7 +6,7 @@ description = 'Ensure only a single process actively running with an associated 
 readme = 'README.md'
 repository = 'https://github.com/CrendKing/rust-singleton-process'
 license-file = 'LICENSE'
-keywords = ['singleton']
+keywords = ['singleton', 'single', 'process']
 categories = ['development-tools']
 
 [dependencies]
@@ -20,7 +20,7 @@ windows = { version = '0.61', default-features = false, features = [
     'Win32_System_Threading',
 ] }
 
-[target.'cfg(any(target_os = "linux", target_os="android"))'.dependencies]
+[target.'cfg(any(target_os = "linux", target_os = "android"))'.dependencies]
 libc = { version = '0.2', default-features = false }
 nix = { version = '0.30', default-features = false, features = ['fs', 'signal'] }
 
