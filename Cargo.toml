@@ -1,9 +1,13 @@
 [package]
 name = 'singleton-process'
-description = ''
-license-file = 'LICENSE'
 version = '0.1.0'
 edition = '2024'
+description = 'Ensure only a single process actively running with an associated name.'
+readme = 'README.md'
+repository = 'https://github.com/CrendKing/rust-singleton-process'
+license-file = 'LICENSE'
+keywords = ['singleton']
+categories = ['development-tools']
 
 [dependencies]
 thiserror = { version = '2.0', default-features = false }
