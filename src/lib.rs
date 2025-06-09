@@ -109,7 +109,7 @@ mod inner {
                     (lock, true)
                 }
                 Err((f, Errno::EAGAIN)) => (Flock::lock(f, FlockArg::LockSharedNonblock).map_err(|(_, e)| e)?, false),
-                Err((_, e)) => panic!("flock failed with errno: {}", e),
+                Err((_, e)) => Err(e)?,
             };
 
             if !is_first {
