@@ -211,6 +211,15 @@ mod tests {
             then {
                 assert!(get_parent_process_exe(&mut system).is_none());
             } else {
+                use nix::sys::signal::*;
+
+                extern "C" fn exit_on_sigterm(_signal: i32) {
+                    std::process::exit(0);
+                }
+
+                // make process exit gracefully on SIGTERM to avoid test failure
+                unsafe { signal(Signal::SIGTERM, SigHandler::Handler(exit_on_sigterm)).unwrap(); }
+
                 let mut cmd = Command::new(current_exe);
                 cmd.arg(function_name!());
                 cmd.status()?;
