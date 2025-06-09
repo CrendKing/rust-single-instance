@@ -77,7 +77,6 @@ mod inner {
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
 mod inner {
-    use std::convert::TryInto;
     use std::env::{current_exe, temp_dir};
     use std::fs::{File, OpenOptions};
     use std::io::{Read, Seek, Write};
@@ -94,7 +93,9 @@ mod inner {
 
     impl SingletonProcess {
         pub fn try_new(name: Option<&str>, keep_new_process: bool) -> crate::Result<Self> {
-            let this_pid = Pid::this();
+            type PidType = u32;
+
+            let this_pid: PidType = std::process::id();
             let pid_size = size_of_val(&this_pid);
 
             let lock_file_name = temp_dir().join(format!("{}_singleton_process.lock", name.unwrap_or(&current_exe()?.file_name().unwrap().to_string_lossy())));
@@ -112,23 +113,23 @@ mod inner {
             };
 
             if !is_first {
-                let mut pid_buffer = vec![0; pid_size];
+                let mut pid_buffer = this_pid.to_le_bytes();
                 file_lock.read_exact(&mut pid_buffer)?;
                 file_lock.rewind()?;
 
-                let other_pid = Pid::from_raw(libc::pid_t::from_le_bytes(pid_buffer.try_into().unwrap()));
-                assert_ne!(other_pid.as_raw(), 0);
+                let other_pid = PidType::from_le_bytes(pid_buffer);
+                assert_ne!(other_pid, 0);
 
                 if other_pid != this_pid {
                     if keep_new_process {
-                        kill(other_pid, Signal::SIGTERM).ok();
+                        kill(Pid::from_raw(other_pid as _), Signal::SIGTERM).ok();
                     } else {
                         std::process::exit(0);
                     }
                 }
             }
 
-            file_lock.write(&this_pid.as_raw().to_le_bytes())?;
+            file_lock.write(&this_pid.to_le_bytes())?;
 
             Ok(Self { _file_lock: file_lock })
         }
