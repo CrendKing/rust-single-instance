@@ -17,7 +17,7 @@ Processes with the same `name` are grouped together. If the name is provided, us
 
 When subseqent process joins, if user chooses to favor the new process, current distinguished process is terminated by the new process, and the new process becomes the new distinguished process. If user chooses to favor the old process, the subseqent process exits immediately.
 
-On Windows, an unnamed file mapping is created on the [`Global\` namespace](https://learn.microsoft.com/en-us/windows/win32/termserv/kernel-object-namespaces). It is then memory mapped and used to hold the distinguished process ID. The handle of the file mapping is held as long as the `SingletonProcess` object is alive.
+On Windows, an unnamed file mapping is created on the [`Global\` namespace](https://learn.microsoft.com/en-us/windows/win32/termserv/kernel-object-namespaces). It is then memory mapped and used to hold the distinguished process ID. The handle of the file mapping is held as long as the `SingletonProcess` object is alive. The terminated process exit code is set to 0.
 
 On Linux, a lock file, created in the temp directory, is used to hold the process ID. The lock is held in sync with the object lifetime.
 

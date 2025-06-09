@@ -138,7 +138,7 @@ mod inner {
 
 #[cfg(test)]
 mod tests {
-    use std::path::PathBuf;
+    use std::path::{Path, PathBuf};
     use std::process::Command;
 
     use if_chain::if_chain;
@@ -156,7 +156,7 @@ mod tests {
             if let Some(parent_pid) = current_process.parent();
             if let Some(parent_process) = system.process(parent_pid);
             then {
-                parent_process.exe().map(|p| p.to_path_buf())
+                parent_process.exe().map(Path::to_path_buf)
             } else {
                 None
             }
@@ -211,14 +211,19 @@ mod tests {
             then {
                 assert!(get_parent_process_exe(&mut system).is_none());
             } else {
-                use nix::sys::signal::*;
+                // make process exit with code 0 on SIGTERM to avoid test failure
+                #[cfg(any(target_os = "linux", target_os = "android"))]
+                {
+                    use nix::sys::signal::*;
 
-                extern "C" fn exit_on_sigterm(_signal: i32) {
-                    std::process::exit(0);
+                    extern "C" fn exit_on_sigterm(signal: i32) {
+                        if signal == Signal::SIGTERM as _ {
+                            std::process::exit(0);
+                        }
+                    }
+
+                    unsafe { signal(Signal::SIGTERM, SigHandler::Handler(exit_on_sigterm)).unwrap(); }
                 }
-
-                // make process exit gracefully on SIGTERM to avoid test failure
-                unsafe { signal(Signal::SIGTERM, SigHandler::Handler(exit_on_sigterm)).unwrap(); }
 
                 let mut cmd = Command::new(current_exe);
                 cmd.arg(function_name!());
