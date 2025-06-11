@@ -1,5 +1,7 @@
 pub use self::inner::*;
 
+type PidType = u32;
+
 #[derive(Debug, thiserror::Error)]
 pub enum SingletonProcessError {
     #[error("I/O error: {0}")]
@@ -26,7 +28,7 @@ mod inner {
     use windows::Win32::System::Memory::{CreateFileMappingA, MapViewOfFile, UnmapViewOfFile, FILE_MAP_READ, FILE_MAP_WRITE, PAGE_READWRITE};
     use windows::Win32::System::Threading::{OpenProcess, TerminateProcess, PROCESS_TERMINATE};
 
-    use crate::SingletonProcessError;
+    use crate::{PidType, SingletonProcessError};
 
     pub struct SingletonProcess {
         _h_mapping: windows::core::Owned<HANDLE>,
@@ -34,7 +36,7 @@ mod inner {
 
     impl SingletonProcess {
         pub fn try_new(name: Option<&str>, keep_new_process: bool) -> crate::Result<Self> {
-            let this_pid = std::process::id();
+            let this_pid: PidType = std::process::id();
             let pid_size = size_of_val(&this_pid);
 
             let mapping_name = format!("Global\\{}\0", name.unwrap_or(&current_exe()?.file_name().unwrap().to_string_lossy()));
@@ -87,14 +89,14 @@ mod inner {
     use nix::sys::signal::{kill, Signal};
     use nix::unistd::Pid;
 
+    use crate::PidType;
+
     pub struct SingletonProcess {
         _file_lock: Flock<File>,
     }
 
     impl SingletonProcess {
         pub fn try_new(name: Option<&str>, keep_new_process: bool) -> crate::Result<Self> {
-            type PidType = u32;
-
             let this_pid: PidType = std::process::id();
             let pid_size = size_of_val(&this_pid);
 
